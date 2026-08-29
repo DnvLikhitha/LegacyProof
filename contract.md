@@ -155,6 +155,7 @@ class ErrorResponse(BaseModel):
 | Date | Change | Changed by |
 |---|---|---|
 | 2026-08-29 | Initial contract defined | Team |
-| 2026-08-29 | Implemented as-is in backend (`main.py`, `models.py`) and frontend (`types.ts`, `api.ts`) — no shape changes needed. LLM provider updated to GLM-5.2 / Gemini 3.7 Flash via LatentCode (implementation detail only, does not affect this contract's shape). | Team |
+| 2026-08-29 | Implemented as-is in backend (`main.py`, `models.py`) and frontend (`types.ts`, `api.ts`) — no shape changes needed. | Team |
+| 2026-08-29 | Confirmed runtime LLM providers: Groq (`openai/gpt-oss-120b` → `openai/gpt-oss-20b` → `qwen/qwen3.6-27b` fallback chain) as primary, Gemini (`gemini-flash-latest` → `gemini-3.5-flash` → `gemini-flash-lite-latest` fallback chain) as backup. GLM-5.2 / Gemini 3.7 Flash via LatentCode are used for *building* the app, not called by the app at runtime — kept separate intentionally. | Team |
 
 *Keep this table updated any time the shape changes — it's the fastest way to catch drift during the 4-hour sync check-ins.*
