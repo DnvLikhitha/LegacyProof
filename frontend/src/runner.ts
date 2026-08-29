@@ -29,24 +29,50 @@ function deepEqual(a: unknown, b: unknown): boolean {
   return true;
 }
 
-function cleanCodeForWorker(code: string): string {
-  // Strip export keywords if present (e.g. export function add or export const add)
-  let cleaned = code.replace(/export\s+default\s+/g, '');
+export function cleanCodeForWorker(code: string, isTypeScript: boolean = false): string {
+  let cleaned = code;
+
+  // 1. Strip export keywords
+  cleaned = cleaned.replace(/export\s+default\s+/g, '');
   cleaned = cleaned.replace(/export\s+/g, '');
 
-  // Strip TypeScript type annotations using regex heuristics suitable for Web Worker plain JS execution
-  // Remove function return type annotations: function foo(a: number): number { ... }
-  cleaned = cleaned.replace(/(\)\s*):\s*[\w<>[\]|\s&]+/g, '$1');
-  // Remove param type annotations: (a: number, b?: string = 'x')
-  cleaned = cleaned.replace(/(\b\w+)\s*\?:?\s*[\w<>[\]|\s&]+(\s*[,=)])/g, '$1$2');
+  if (isTypeScript) {
+    // 2. Strip parameter type annotations only for TypeScript code
+    // e.g. (amount: unknown, currency?: string) -> (amount, currency)
+    // or (amount: unknown, currency: string = '$') -> (amount, currency = '$')
+    cleaned = cleaned.replace(/(\(\s*)([^)]*)(\s*\))/g, (_match, p1, params, p3) => {
+      const strippedParams = params
+        .split(',')
+        .map((param: string) => {
+          let p = param.trim();
+          p = p.replace(/\s*\?:?\s*[\w<>[\]|\s&{}()]+(?=\s*=[^=]|$)/g, '');
+          p = p.replace(/\s*:\s*[\w<>[\]|\s&{}()]+/g, '');
+          return p;
+        })
+        .join(', ');
+      return p1 + strippedParams + p3;
+    });
+
+    // 3. Strip function return type annotations
+    cleaned = cleaned.replace(/(\)\s*):\s*[\w<>[\]|\s&{}()]+(?=\s*\{|\s*=>)/g, '$1');
+
+    // 4. Strip 'as' type assertions
+    cleaned = cleaned.replace(/\s+as\s+[\w<>[\]|\s&{}()]+/g, '');
+
+    // 5. Clean up any accidental replacement space insertions e.g. '$1, ' -> '$1,'
+    cleaned = cleaned.replace(/\$1,\s+/g, '$1,');
+  }
+
+  // 5. Convert arrow variable declarations back to standard function declarations if needed
+  cleaned = cleaned.replace(/(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:function\b|\([^)]*\)\s*=>)/g, 'function $1');
 
   return cleaned;
 }
 
-function runCodeInWorker(code: string, functionName: string, args: unknown[]): Promise<{ actual?: unknown; error?: string; executionTimeMs: number }> {
+function runCodeInWorker(code: string, functionName: string, args: unknown[], isTypeScript: boolean = false): Promise<{ actual?: unknown; error?: string; executionTimeMs: number }> {
   return new Promise((resolve) => {
     const startTime = performance.now();
-    const cleanedCode = cleanCodeForWorker(code);
+    const cleanedCode = cleanCodeForWorker(code, isTypeScript);
 
     const workerScript = `
       self.onmessage = function(e) {
@@ -74,13 +100,19 @@ function runCodeInWorker(code: string, functionName: string, args: unknown[]): P
           const fn = new Function('$', \`
             "use strict";
             \${code}
-            if (typeof \${functionName} === 'function') {
-              return \${functionName};
+            let fnRef = null;
+            try {
+              if (typeof \${functionName} === 'function') fnRef = \${functionName};
+            } catch (e) {}
+            if (!fnRef) {
+              try {
+                if (typeof self['\${functionName}'] === 'function') fnRef = self['\${functionName}'];
+              } catch (e) {}
             }
-            if (typeof self['\${functionName}'] === 'function') {
-              return self['\${functionName}'];
+            if (!fnRef) {
+              throw new Error("Function '\${functionName}' was not found after executing code.");
             }
-            throw new Error("Function '\${functionName}' was not found after executing code.");
+            return fnRef;
           \`)($);
 
           const result = fn.apply(null, args);
@@ -145,8 +177,8 @@ export async function executeEquivalenceTests(
   for (let i = 0; i < tests.length; i++) {
     const t = tests[i];
     
-    // 1. Run against Original Code
-    const origRes = await runCodeInWorker(originalCode, functionName, t.args);
+    // 1. Run against Original Code (isTypeScript = false)
+    const origRes = await runCodeInWorker(originalCode, functionName, t.args, false);
     const origPassed = origRes.error === undefined && deepEqual(origRes.actual, t.expected);
 
     results[i] = {
@@ -161,8 +193,8 @@ export async function executeEquivalenceTests(
     // Small delay for visual step animation effect in UI
     await new Promise((r) => setTimeout(r, 120));
 
-    // 2. Run against Modernized Code
-    const modernRes = await runCodeInWorker(modernizedCode, functionName, t.args);
+    // 2. Run against Modernized Code (isTypeScript = true)
+    const modernRes = await runCodeInWorker(modernizedCode, functionName, t.args, true);
     const modernPassed = modernRes.error === undefined && deepEqual(modernRes.actual, t.expected);
 
     results[i] = {

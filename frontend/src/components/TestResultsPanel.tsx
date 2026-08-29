@@ -147,9 +147,20 @@ export const TestResultsPanel: React.FC<TestResultsPanelProps> = ({
                       <CheckCircle2 className="w-3.5 h-3.5" /> Passed ({test.modernExecutionTimeMs}ms)
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-xs text-rose-400 font-medium bg-rose-950/40 px-2 py-0.5 rounded border border-rose-800/40">
-                      <XCircle className="w-3.5 h-3.5" /> Mismatch
-                    </span>
+                    <div className="flex flex-col items-end">
+                      <span className="flex items-center gap-1 text-xs text-rose-400 font-medium bg-rose-950/40 px-2 py-0.5 rounded border border-rose-800/40">
+                        <XCircle className="w-3.5 h-3.5" /> Mismatch
+                      </span>
+                      {test.modernError ? (
+                        <span className="text-[10px] text-rose-300 font-mono mt-0.5 max-w-[160px] truncate" title={test.modernError}>
+                          Err: {test.modernError}
+                        </span>
+                      ) : test.modernActual !== undefined ? (
+                        <span className="text-[10px] text-slate-400 font-mono mt-0.5 max-w-[160px] truncate" title={`Actual: ${JSON.stringify(test.modernActual)}`}>
+                          Got: {JSON.stringify(test.modernActual)}
+                        </span>
+                      ) : null}
+                    </div>
                   )}
                 </div>
               </div>
