@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 from typing import Any, Dict, List, Tuple
@@ -7,20 +8,25 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("llm_service")
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 PROMPT_TEMPLATE = """You are an expert JavaScript/TypeScript refactoring assistant.
-Your task is to take a legacy JavaScript function or snippet, modernize it into clean, idiomatic TypeScript, and generate a comprehensive suite of unit test cases (input arguments -> expected output) that prove equivalence.
+Your task is to take a legacy JavaScript function or snippet, modernize it into clean, idiomatic TypeScript, and generate a comprehensive suite of unit test cases (input arguments -> expected output) that prove exact behavioral equivalence.
 
 ### Guidelines:
-1. Modernize code to clean TypeScript (modern syntax, arrow functions/ES6+, async/await if applicable, explicit types).
-2. Retain original function name or identify the primary function being modernized.
-3. Extract or synthesize 3-5 deterministic, JSON-serializable test cases:
-   - "args": array of positional parameters to pass to the function.
-   - "expected": expected output.
+1. Modernize code to clean TypeScript using standard function syntax (e.g. `export function formatPrice(...)`).
+2. The modernized TypeScript code MUST preserve 100% exact behavioral equivalence with the legacy code for all input edge cases (nulls, string numbers, defaults, non-numeric values, regex formatting, string concatenation, etc.).
+3. Retain the exact same primary function name in the modernized code as in the legacy code using standard function declaration (`function <function_name>(...)`). Do NOT use arrow variable declarations like `const formatPrice = ...`.
+4. REGEX & REPLACEMENT STRING ACCURACY: If the legacy code contains regex replacement like `.replace(/(\\d)(?=(\\d{{3}})+(?!\\d))/g, '$1,')`, you MUST include `$1,` (dollar sign 1 followed by comma, with NO spaces) as the second argument in `.replace(...)`. Do NOT replace `$1,` with `,` or `'$1, '`.
+5. Extract or synthesize 3-5 deterministic, JSON-serializable test cases:
+   - "args": array of positional parameters passed to the function.
+   - "expected": expected return value produced when executing the original legacy code with those positional arguments.
    - Arguments and expected outputs must be simple JSON types (numbers, strings, booleans, objects, arrays, null). Do not use functions, DOM nodes, or undefined.
-4. Detect browser/DOM usage (e.g. `document`, `window`, jQuery `$`, DOM manipulation):
+6. Detect browser/DOM usage (e.g. `document`, `window`, jQuery `$`, DOM manipulation):
    - Modernize the logic safely if possible.
    - Include clear warning messages in the `warnings` array if DOM or network dependencies might cause sandboxed client execution issues.
 
@@ -33,7 +39,7 @@ Your task is to take a legacy JavaScript function or snippet, modernize it into 
 Respond strictly with valid JSON conforming to the following structure (do not add extra markdown formatting around the JSON outside ```json):
 ```json
 {{
-  "function_name": "<primary_function_name>",
+  "function_name": "<exact_primary_function_name>",
   "modernized_code": "<modernized_typescript_code>",
   "tests": [
     {{
@@ -57,7 +63,31 @@ def _clean_json_string(content: str) -> str:
     return content.strip()
 
 
+def _fix_regex_replacements(modernized_code: str, legacy_code: str) -> str:
+    # 1. Strip any trailing space inside replacement strings e.g. '$1, ' -> '$1,'
+    modernized_code = re.sub(r"(['\"])\$1,\s+\1", r"\1$1,\1", modernized_code)
+    modernized_code = modernized_code.replace("'$1, '", "'$1,'").replace('"$1, "', '"$1,"')
+
+    # 2. If legacy code contains '$1,', ensure $1 group reference is present in the replacement
+    if "$1," in legacy_code:
+        # Match .replace(regex, ',') or .replace(regex, '$1, ') and fix to '$1,'
+        modernized_code = re.sub(
+            r"\.replace\((/[^/]+/[a-z]*),\s*(['\"])(?:\$1,\s*|,)\2\)",
+            r".replace(\1, \2$1,\2)",
+            modernized_code,
+        )
+        # If LLM wrote custom replace replacement without $1 e.g. .replace(/(\d).../g, ',')
+        if "$1" not in modernized_code:
+            modernized_code = re.sub(
+                r"\.replace\((/[^/]+/[a-z]*),\s*(['\"])(.*?)\2\)",
+                r".replace(\1, \2$1,\2)",
+                modernized_code,
+            )
+    return modernized_code
+
+
 async def call_groq(legacy_code: str, api_key: str) -> Dict[str, Any]:
+    logger.info("Sending request to Groq API (openai/gpt-oss-120b)...")
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -65,11 +95,11 @@ async def call_groq(legacy_code: str, api_key: str) -> Dict[str, Any]:
     }
     prompt = PROMPT_TEMPLATE.format(legacy_code=legacy_code)
     payload = {
-        "model": "llama-3.3-70b-versatile",
+        "model": "openai/gpt-oss-120b",
         "messages": [
             {
                 "role": "system",
-                "content": "You output only valid JSON matching the specified format without extra conversational text.",
+                "content": "You are a JSON generator. You output only valid JSON matching the specified format without extra conversational text.",
             },
             {"role": "user", "content": prompt},
         ],
@@ -83,11 +113,16 @@ async def call_groq(legacy_code: str, api_key: str) -> Dict[str, Any]:
         data = response.json()
         raw_content = data["choices"][0]["message"]["content"]
         cleaned = _clean_json_string(raw_content)
-        return json.loads(cleaned)
+        result = json.loads(cleaned)
+        if "modernized_code" in result:
+            result["modernized_code"] = _fix_regex_replacements(result["modernized_code"], legacy_code)
+        logger.info("Successfully received response from Groq API (openai/gpt-oss-120b)")
+        return result
 
 
 async def call_gemini(legacy_code: str, api_key: str) -> Dict[str, Any]:
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={api_key}"
+    logger.info("Sending request to Gemini API (gemini-3.5-flash)...")
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
     prompt = PROMPT_TEMPLATE.format(legacy_code=legacy_code)
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
@@ -103,7 +138,11 @@ async def call_gemini(legacy_code: str, api_key: str) -> Dict[str, Any]:
         data = response.json()
         raw_content = data["candidates"][0]["content"]["parts"][0]["text"]
         cleaned = _clean_json_string(raw_content)
-        return json.loads(cleaned)
+        result = json.loads(cleaned)
+        if "modernized_code" in result:
+            result["modernized_code"] = _fix_regex_replacements(result["modernized_code"], legacy_code)
+        logger.info("Successfully received response from Gemini API (gemini-3.5-flash)")
+        return result
 
 
 async def process_legacy_code(legacy_code: str) -> Dict[str, Any]:
