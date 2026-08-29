@@ -72,9 +72,15 @@ Respond strictly with valid JSON conforming to the following structure (do not a
 
 def _clean_json_string(content: str) -> str:
     content = content.strip()
+    # Remove reasoning blocks enclosed in <think>...</think> if present (e.g. Qwen models)
+    content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
     if content.startswith("```"):
         content = re.sub(r"^```(?:json)?\s*", "", content, flags=re.IGNORECASE)
         content = re.sub(r"\s*```$", "", content)
+    # Extract JSON object substring if surrounded by extra text
+    match = re.search(r"(\{.*\})", content, flags=re.DOTALL)
+    if match:
+        content = match.group(1)
     return content.strip()
 
 
@@ -102,62 +108,92 @@ def _fix_regex_replacements(modernized_code: str, legacy_code: str) -> str:
 
 
 async def call_groq(legacy_code: str, api_key: str) -> Dict[str, Any]:
-    logger.info("Sending request to Groq API (openai/gpt-oss-120b)...")
-    url = "https://api.groq.com/openai/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-    prompt = PROMPT_TEMPLATE.format(legacy_code=legacy_code)
-    payload = {
-        "model": "openai/gpt-oss-120b",
-        "messages": [
-            {
-                "role": "system",
-                "content": "You are a JSON generator. You output only valid JSON matching the specified format without extra conversational text.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0.1,
-        "response_format": {"type": "json_object"},
-    }
+    models = ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"]
+    last_err = None
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        raw_content = data["choices"][0]["message"]["content"]
-        cleaned = _clean_json_string(raw_content)
-        result = json.loads(cleaned)
-        if "modernized_code" in result:
-            result["modernized_code"] = _fix_regex_replacements(result["modernized_code"], legacy_code)
-        logger.info("Successfully received response from Groq API (openai/gpt-oss-120b)")
-        return result
+    for model in models:
+        logger.info(f"Sending request to Groq API ({model})...")
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+        prompt = PROMPT_TEMPLATE.format(legacy_code=legacy_code)
+        
+        # Build payload based on model support
+        payload: Dict[str, Any] = {
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are a JSON generator. You output only valid JSON matching the specified format without extra conversational text.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.1,
+        }
+        
+        # openai/gpt-oss models support structured response_format
+        if "gpt-oss" in model:
+            payload["response_format"] = {"type": "json_object"}
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(url, headers=headers, json=payload)
+                response.raise_for_status()
+                data = response.json()
+                raw_content = data["choices"][0]["message"]["content"]
+                cleaned = _clean_json_string(raw_content)
+                result = json.loads(cleaned)
+                if isinstance(result, str):
+                    result = json.loads(result)
+                if "modernized_code" in result:
+                    result["modernized_code"] = _fix_regex_replacements(result["modernized_code"], legacy_code)
+                logger.info(f"Successfully received response from Groq API ({model})")
+                return result
+        except Exception as e:
+            logger.warning(f"Groq model {model} failed: {e}")
+            last_err = e
+
+    raise last_err or RuntimeError("All Groq models failed.")
 
 
 async def call_gemini(legacy_code: str, api_key: str) -> Dict[str, Any]:
-    logger.info("Sending request to Gemini API (gemini-3.5-flash)...")
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={api_key}"
-    prompt = PROMPT_TEMPLATE.format(legacy_code=legacy_code)
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "response_mime_type": "application/json",
-            "temperature": 0.1,
-        },
-    }
+    # List of valid supported models to try in order
+    models_to_try = ["gemini-flash-latest", "gemini-3.5-flash", "gemini-flash-lite-latest"]
+    last_error = None
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(url, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        raw_content = data["candidates"][0]["content"]["parts"][0]["text"]
-        cleaned = _clean_json_string(raw_content)
-        result = json.loads(cleaned)
-        if "modernized_code" in result:
-            result["modernized_code"] = _fix_regex_replacements(result["modernized_code"], legacy_code)
-        logger.info("Successfully received response from Gemini API (gemini-3.5-flash)")
-        return result
+    for model_name in models_to_try:
+        logger.info(f"Sending request to Gemini API ({model_name})...")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+        prompt = PROMPT_TEMPLATE.format(legacy_code=legacy_code)
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {
+                "response_mime_type": "application/json",
+                "temperature": 0.1,
+            },
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(url, json=payload)
+                response.raise_for_status()
+                data = response.json()
+                raw_content = data["candidates"][0]["content"]["parts"][0]["text"]
+                cleaned = _clean_json_string(raw_content)
+                result = json.loads(cleaned)
+                if isinstance(result, str):
+                    result = json.loads(result)
+                if "modernized_code" in result:
+                    result["modernized_code"] = _fix_regex_replacements(result["modernized_code"], legacy_code)
+                logger.info(f"Successfully received response from Gemini API ({model_name})")
+                return result
+        except Exception as e:
+            logger.warning(f"Gemini model {model_name} failed: {e}")
+            last_error = e
+
+    raise last_error or RuntimeError("All Gemini models failed.")
 
 
 async def process_legacy_code(legacy_code: str) -> Dict[str, Any]:
@@ -172,6 +208,10 @@ async def process_legacy_code(legacy_code: str) -> Dict[str, Any]:
             return await call_groq(legacy_code, groq_key)
         except Exception as e:
             errors.append(f"Groq error: {str(e)}")
+
+    # Small delay before fallback to reduce rate-limit pressure
+    import asyncio
+    await asyncio.sleep(1.0)
 
     # Fallback to Gemini
     if gemini_key and gemini_key != "your_gemini_api_key_here":
