@@ -55,10 +55,10 @@ No database. No persistent backend required for the core demo. This drastically 
 
 | Tool | Purpose | Cost |
 |---|---|---|
-| **Groq API** (Llama 3.3 70B or similar) | Primary LLM: code modernization + test generation. Chosen for very low latency — important for a live demo. | Free tier (generous rate limits, no card required) |
-| **Google Gemini API** (via AI Studio) | Backup/alternative LLM if Groq rate limits are hit during testing | Free tier |
+| **Groq API** — fallback chain: `openai/gpt-oss-120b` → `openai/gpt-oss-20b` → `qwen/qwen3.6-27b` | Primary runtime LLM: code modernization + test generation. Chosen for very low latency — important for a live demo. Tries each model in order until one succeeds. | Free tier (generous rate limits, no card required) |
+| **Gemini API** — fallback chain: `gemini-flash-latest` → `gemini-3.5-flash` → `gemini-flash-lite-latest` | Backup provider if all Groq models fail/rate-limit during a request | Free tier |
 
-**Note on LatentCode:** per the hackathon rules, LatentCode is the tool you use *to build* this project (your AI pair-programmer during the sprint). The Groq/Gemini API above is a separate thing — it's the LLM your *finished app* calls at runtime to actually perform the code modernization. These are two different roles and it's worth stating that distinction clearly in your submission.
+**Note on LatentCode:** per the hackathon rules, LatentCode is the tool you use *to build* this project — it gives you access to models like GLM-5.2 and Gemini 3.7 Flash as your coding agent while developing. That's a separate role from the Groq/Gemini chain above, which is what your *finished app* calls at runtime to actually perform the code modernization live for users/judges. Worth stating that distinction clearly in your submission.
 
 ## 4. Code Execution / Equivalence Sandbox
 
