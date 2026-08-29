@@ -14,21 +14,36 @@ logger = logging.getLogger("llm_service")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-PROMPT_TEMPLATE = """You are an expert JavaScript/TypeScript refactoring assistant.
-Your task is to take a legacy JavaScript function or snippet, modernize it into clean, idiomatic TypeScript, and generate a comprehensive suite of unit test cases (input arguments -> expected output) that prove exact behavioral equivalence.
+PROMPT_TEMPLATE = """You are an expert JavaScript/TypeScript refactoring assistant following a strict 5-step legacy equivalence generation process.
 
-### Guidelines:
-1. Modernize code to clean TypeScript using standard function syntax (e.g. `export function formatPrice(...)`).
-2. The modernized TypeScript code MUST preserve 100% exact behavioral equivalence with the legacy code for all input edge cases (nulls, string numbers, defaults, non-numeric values, regex formatting, string concatenation, etc.).
-3. Retain the exact same primary function name in the modernized code as in the legacy code using standard function declaration (`function <function_name>(...)`). Do NOT use arrow variable declarations like `const formatPrice = ...`.
-4. REGEX & REPLACEMENT STRING ACCURACY: If the legacy code contains regex replacement like `.replace(/(\\d)(?=(\\d{{3}})+(?!\\d))/g, '$1,')`, you MUST include `$1,` (dollar sign 1 followed by comma, with NO spaces) as the second argument in `.replace(...)`. Do NOT replace `$1,` with `,` or `'$1, '`.
-5. Extract or synthesize 3-5 deterministic, JSON-serializable test cases:
-   - "args": array of positional parameters passed to the function.
-   - "expected": expected return value produced when executing the original legacy code with those positional arguments.
-   - Arguments and expected outputs must be simple JSON types (numbers, strings, booleans, objects, arrays, null). Do not use functions, DOM nodes, or undefined.
-6. Detect browser/DOM usage (e.g. `document`, `window`, jQuery `$`, DOM manipulation):
-   - Modernize the logic safely if possible.
-   - Include clear warning messages in the `warnings` array if DOM or network dependencies might cause sandboxed client execution issues.
+Follow this exact process to modernize legacy code and generate behavioral equivalence tests:
+
+### Process:
+
+#### Step 1 — Analyze the Legacy Code:
+- Identify function name(s) and signature(s).
+- Determine whether it is a pure function or impure (touches `document`, `window`, jQuery `$`, network, timers, or global mutable state).
+- Identify implicit behavior: type coercions, default/undefined parameters, edge-case branches, string concatenation, and error handling.
+- Retain the exact same primary function name using standard function declaration (`function <function_name>(...)` or `export function <function_name>(...)`). Do NOT change parameter positions or rename the primary function.
+
+#### Step 2 — Generate Representative Test Cases:
+Create 4 to 8 test cases covering:
+1. Typical / happy path (normal expected inputs).
+2. Boundary conditions (empty inputs, zero, negative numbers, large values).
+3. Code-specific edge cases (exercising conditional logic and type coercion branches).
+4. Invalid / unexpected input handling (e.g. null, undefined, non-numeric strings).
+
+#### Step 3 — Determine Expected Outputs from ORIGINAL Code Behavior:
+- Trace and execute positional arguments through the ORIGINAL legacy code's actual logic to derive the `expected` outputs.
+- Do NOT idealize or "fix" bug behavior — if the legacy code has a bug or quirk, preserve its actual output in `expected` and add an explanatory message in `warnings`. Behavioral equivalence with the original code is required.
+
+#### Step 4 — Code Modernization & Regex Accuracy:
+- Modernize code into clean, idiomatic TypeScript (ES6+, explicit type annotations, const/let, arrow functions internally if appropriate).
+- REGEX & REPLACEMENT STRING ACCURACY: If the legacy code contains regex replacement like `.replace(/(\\d)(?=(\\d{{3}})+(?!\\d))/g, '$1,')`, you MUST include `$1,` (dollar sign 1 followed by comma, with NO spaces) as the second argument in `.replace(...)`. Do NOT replace `$1,` with `,` or `'$1, '`.
+
+#### Step 5 — Self-Check & Output Schema Validation:
+- Ensure all `args` and `expected` values are simple JSON-serializable types (numbers, strings, booleans, objects, arrays, null). Do not use functions, DOM nodes, or undefined.
+- Avoid redundant tests. Aim for 4-8 distinct test cases per function.
 
 ### Legacy Code:
 ```javascript

@@ -1,5 +1,6 @@
 import pytest
 import os
+from unittest.mock import AsyncMock, patch
 from fastapi.testclient import TestClient
 from main import app
 
@@ -20,7 +21,36 @@ def test_process_empty_code():
     assert "legacy_code is empty" in data["detail"]
 
 
-# Example 1: Simple Math / Utility Function
+# Mocked Test (Runs without live API keys / network access)
+@patch("main.process_legacy_code", new_callable=AsyncMock)
+def test_process_with_mocked_llm(mock_process):
+    mock_process.return_value = {
+        "function_name": "calculateTotal",
+        "modernized_code": "export function calculateTotal(price: number, taxRate: number): number { return price + (price * taxRate); }",
+        "tests": [
+            {
+                "id": "test-1",
+                "description": "Calculates total with 10% tax",
+                "args": [100, 0.1],
+                "expected": 110,
+            }
+        ],
+        "warnings": [],
+    }
+
+    response = client.post("/process", json={"legacy_code": "function calculateTotal(price, taxRate) { return price + (price * taxRate); }"})
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["function_name"] == "calculateTotal"
+    assert "export function calculateTotal" in data["modernized_code"]
+    assert len(data["tests"]) == 1
+    assert data["tests"][0]["id"] == "test-1"
+    assert data["tests"][0]["expected"] == 110
+    assert data["warnings"] == []
+
+
+# Live API Tests (Require GROQ_API_KEY or GEMINI_API_KEY in environment)
 def test_process_simple_function():
     legacy_code = "function calculateTotal(price, taxRate) { return price + (price * taxRate); }"
     response = client.post("/process", json={"legacy_code": legacy_code})
@@ -41,7 +71,6 @@ def test_process_simple_function():
         assert "expected" in test_case
 
 
-# Example 2: String Processing / Callback Style Code
 def test_process_string_formatter():
     legacy_code = """
     function formatUser(name, role) {
@@ -58,7 +87,6 @@ def test_process_string_formatter():
     assert len(data["tests"]) >= 2
 
 
-# Example 3: Legacy jQuery / DOM Reference (Should generate warnings)
 def test_process_jquery_dom_snippet():
     legacy_code = """
     function updateHeader(text) {
@@ -72,5 +100,4 @@ def test_process_jquery_dom_snippet():
 
     assert "function_name" in data
     assert "modernized_code" in data
-    # DOM references should produce a warning
     assert len(data["warnings"]) > 0 or any("dom" in w.lower() or "jquery" in w.lower() or "document" in w.lower() for w in data["warnings"])
