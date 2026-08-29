@@ -13,7 +13,6 @@ import {
   FileCode2,
   Cpu,
   Layers,
-  ChevronRight,
   Terminal,
 } from 'lucide-react';
 import type { ProcessResponse, TestResult } from './types';
@@ -145,37 +144,34 @@ export const App: React.FC = () => {
   const lineCount = (code: string) => (code ? code.split('\n').length : 0);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
-      {/* Top Header */}
-      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl sticky top-0 z-50 shadow-lg shadow-black/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-3.5">
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-300"></div>
-              <div className="relative p-2.5 rounded-xl bg-slate-900 border border-slate-700/80 text-indigo-400">
-                <ShieldCheck className="w-5 h-5 text-indigo-300" />
-              </div>
+    <div className="min-h-screen text-slate-100 flex flex-col font-sans selection:bg-blue-500/30 selection:text-blue-200">
+      {/* Professional Top Navigation Header */}
+      <header className="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50 shadow-md">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+          {/* Logo & Product Title */}
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-600 text-white shadow-md shadow-blue-600/20">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-indigo-300 bg-clip-text text-transparent">
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-slate-100 tracking-tight">
                   LegacyProof
                 </h1>
-                <span className="text-[10px] font-semibold tracking-wide px-2.5 py-0.5 rounded-full bg-indigo-950/90 text-indigo-300 border border-indigo-700/60 shadow-inner">
-                  AI + Equivalence Sandbox
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-blue-950 text-blue-300 border border-blue-800/60">
+                  Equivalence Sandbox
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-medium hidden sm:block">
-                Modernize legacy JS to clean TypeScript with mathematically proven behavior
+                Modernize legacy JS to TypeScript with client-side behavioral proof
               </p>
             </div>
           </div>
 
           {/* Header Controls */}
           <div className="flex items-center gap-3">
-            {/* Backend health status badge */}
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-xs shadow-inner">
+            {/* Backend status badge */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs">
               <Server className="w-3.5 h-3.5 text-slate-400" />
               <span className="text-slate-400 font-medium">Backend:</span>
               <span className="flex items-center gap-1.5 font-semibold">
@@ -198,21 +194,20 @@ export const App: React.FC = () => {
               </span>
             </div>
 
-            {/* Main Action CTA */}
+            {/* Primary Action Button */}
             <button
               onClick={handleModernizeAndVerify}
               disabled={isLoading || isTestRunning}
-              className="relative group overflow-hidden flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-sm shadow-xl shadow-indigo-600/25 transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm shadow-md shadow-blue-600/20 transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="absolute inset-0 w-1/2 h-full bg-white/20 skew-x-12 -translate-x-full group-hover:translate-x-[300%] transition-transform duration-1000 ease-out" />
               {isLoading || isTestRunning ? (
                 <>
-                  <Zap className="w-4 h-4 animate-spin text-indigo-200" />
-                  <span>Proving Equivalence...</span>
+                  <Zap className="w-4 h-4 animate-spin text-blue-200" />
+                  <span>Processing...</span>
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 text-indigo-200" />
+                  <Sparkles className="w-4 h-4 text-blue-200" />
                   <span>Modernize & Prove</span>
                 </>
               )}
@@ -223,41 +218,31 @@ export const App: React.FC = () => {
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Value Proposition Pills */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-medium">
-          <div className="p-2.5 rounded-xl glass-card flex items-center gap-2.5 text-slate-300">
-            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
-              <Cpu className="w-4 h-4" />
-            </div>
-            <span>Dual Web Workers</span>
+        {/* Core Capabilities Subtitle Strip */}
+        <div className="flex flex-wrap items-center justify-between gap-3 py-2 px-4 rounded-xl bg-slate-900/60 border border-slate-800/80 text-xs font-medium text-slate-300">
+          <div className="flex items-center gap-2">
+            <Cpu className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            <span>Dual Web Workers <span className="text-slate-500 font-normal">• Parallel execution</span></span>
           </div>
-          <div className="p-2.5 rounded-xl glass-card flex items-center gap-2.5 text-slate-300">
-            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
-              <Layers className="w-4 h-4" />
-            </div>
-            <span>Deep Equality Engine</span>
+          <div className="flex items-center gap-2">
+            <Layers className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Deep Equality <span className="text-slate-500 font-normal">• Exact match engine</span></span>
           </div>
-          <div className="p-2.5 rounded-xl glass-card flex items-center gap-2.5 text-slate-300">
-            <div className="p-1.5 rounded-lg bg-violet-500/10 text-violet-400">
-              <Code2 className="w-4 h-4" />
-            </div>
-            <span>AST Modernization</span>
+          <div className="flex items-center gap-2">
+            <Code2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+            <span>AST Modernization <span className="text-slate-500 font-normal">• Clean TypeScript</span></span>
           </div>
-          <div className="p-2.5 rounded-xl glass-card flex items-center gap-2.5 text-slate-300">
-            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-400">
-              <Terminal className="w-4 h-4" />
-            </div>
-            <span>100% Client Isolation</span>
+          <div className="flex items-center gap-2">
+            <Terminal className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>Client Sandbox <span className="text-slate-500 font-normal">• 100% Isolated</span></span>
           </div>
         </div>
 
-        {/* Preset Selector Banner */}
-        <div className="glass-panel p-3.5 rounded-2xl border border-slate-800/80 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <FileCode2 className="w-4 h-4 text-indigo-400 shrink-0" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">
-              Try Legacy Presets:
-            </span>
+        {/* Sample Presets Bar */}
+        <div className="pro-card p-3 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <FileCode2 className="w-4 h-4 text-blue-400 shrink-0" />
+            <span>Try Legacy Presets:</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {SAMPLE_SNIPPETS.map((sample, idx) => {
@@ -266,14 +251,13 @@ export const App: React.FC = () => {
                 <button
                   key={idx}
                   onClick={() => handleSelectSample(idx)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 border flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition border ${
                     isActive
-                      ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white border-indigo-500 shadow-md shadow-indigo-500/20'
-                      : 'bg-slate-900/80 hover:bg-slate-800 text-slate-300 border-slate-700/80'
+                      ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
+                      : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700/80'
                   }`}
                 >
-                  <span>{sample.label}</span>
-                  {isActive && <ChevronRight className="w-3.5 h-3.5 opacity-80" />}
+                  {sample.label}
                 </button>
               );
             })}
@@ -282,11 +266,11 @@ export const App: React.FC = () => {
 
         {/* Error Banner */}
         {error && (
-          <div className="bg-rose-950/60 border border-rose-800/80 rounded-2xl p-4 flex items-start gap-3.5 text-rose-200 shadow-xl animate-in fade-in">
+          <div className="bg-rose-950/60 border border-rose-800/80 rounded-xl p-4 flex items-start gap-3 text-rose-200">
             <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
             <div className="text-sm space-y-1">
-              <div className="font-bold text-rose-300">Modernization Error</div>
-              <div className="text-rose-200/90">{error}</div>
+              <strong className="font-semibold text-rose-300">Modernization Error:</strong>
+              <div>{error}</div>
             </div>
           </div>
         )}
@@ -294,16 +278,16 @@ export const App: React.FC = () => {
         {/* Code Editors Side-by-Side Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Legacy JS Input Panel */}
-          <div className="flex flex-col rounded-2xl glass-panel border border-slate-800/80 overflow-hidden shadow-2xl transition-all duration-300 hover:border-slate-700/80">
+          <div className="flex flex-col rounded-xl pro-card overflow-hidden shadow-lg">
             {/* Editor Header */}
             <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                  Legacy JavaScript Code
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
+                  Legacy Code (Input)
                 </h2>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-amber-400 border border-slate-700/60">
-                  ES5 / jQuery
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                  JS / ES5 / jQuery
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
@@ -342,16 +326,16 @@ export const App: React.FC = () => {
           </div>
 
           {/* Modernized TS Output Panel */}
-          <div className="flex flex-col rounded-2xl glass-panel border border-slate-800/80 overflow-hidden shadow-2xl transition-all duration-300 hover:border-slate-700/80">
+          <div className="flex flex-col rounded-xl pro-card overflow-hidden shadow-lg">
             {/* Editor Header */}
             <div className="bg-slate-900/90 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                  Modernized TypeScript
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
+                  Modernized Code (Output)
                 </h2>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700/60">
-                  TS 5.0+
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700">
+                  TypeScript
                 </span>
               </div>
 
@@ -363,14 +347,14 @@ export const App: React.FC = () => {
                     </span>
                     <button
                       onClick={handleCopyCode}
-                      className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg bg-indigo-950/80 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-800/60 transition active:scale-95"
+                      className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-blue-400 border border-slate-700 transition active:scale-95"
                     >
                       {copied ? (
                         <Check className="w-3.5 h-3.5 text-emerald-400" />
                       ) : (
                         <Copy className="w-3.5 h-3.5" />
                       )}
-                      <span>{copied ? 'Copied!' : 'Copy Code'}</span>
+                      <span>{copied ? 'Copied' : 'Copy Code'}</span>
                     </button>
                   </>
                 )}
@@ -380,20 +364,18 @@ export const App: React.FC = () => {
             {/* Monaco Container & Loading Overlay */}
             <div className="h-[380px] bg-slate-950 relative">
               {isLoading && (
-                <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md z-10 flex flex-col items-center justify-center gap-4 text-slate-300 p-6 text-center animate-in fade-in">
-                  <div className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-                    <Sparkles className="w-7 h-7 animate-spin" />
-                  </div>
+                <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-10 flex flex-col items-center justify-center gap-3 text-slate-300 p-6 text-center">
+                  <Sparkles className="w-7 h-7 text-blue-400 animate-spin" />
                   <div className="space-y-1">
-                    <p className="text-sm font-bold text-slate-100">
+                    <p className="text-sm font-semibold text-slate-200">
                       Generating Modernized TypeScript & Behavior Tests
                     </p>
                     <p className="text-xs text-slate-400">
-                      Analyzing ES5 syntax patterns and constructing equivalence assertions...
+                      Running client-side equivalence analysis...
                     </p>
                   </div>
-                  <div className="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                    <div className="w-full h-full bg-gradient-to-r from-indigo-500 to-violet-500 animate-shimmer" />
+                  <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="w-full h-full bg-blue-500 animate-shimmer" />
                   </div>
                 </div>
               )}
@@ -423,11 +405,11 @@ export const App: React.FC = () => {
 
         {/* Migration Warnings Banner */}
         {warnings.length > 0 && (
-          <div className="bg-amber-950/30 border border-amber-800/50 rounded-2xl p-4 text-amber-200 space-y-2 shadow-lg">
-            <div className="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wider">
-              <AlertTriangle className="w-4 h-4 text-amber-400" /> Refactoring Warnings
+          <div className="bg-amber-950/30 border border-amber-800/50 rounded-xl p-4 text-amber-200 space-y-1">
+            <div className="flex items-center gap-2 text-amber-300 font-semibold text-xs uppercase tracking-wider">
+              <AlertTriangle className="w-4 h-4 text-amber-400" /> Migration Warnings
             </div>
-            <ul className="list-disc list-inside text-xs space-y-1 text-amber-200/90 font-sans">
+            <ul className="list-disc list-inside text-xs space-y-1 text-amber-200/80">
               {warnings.map((warn, i) => (
                 <li key={i}>{warn}</li>
               ))}
@@ -445,12 +427,12 @@ export const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950 py-5 text-center text-xs text-slate-500 space-y-1">
+      <footer className="border-t border-slate-800/80 bg-slate-950 py-4 text-center text-xs text-slate-500 space-y-1">
         <div>
           <strong className="text-slate-400">LegacyProof</strong> • AI Modernization & Behavioral Equivalence Sandbox
         </div>
         <div className="text-[11px] text-slate-600">
-          Client-Side Web Workers Engine • Zero Server Code Execution
+          Client-Side Web Workers Engine • 100% Isolated Sandbox
         </div>
       </footer>
     </div>
