@@ -94,7 +94,15 @@ export const TestResultsPanel: React.FC<TestResultsPanelProps> = ({
           return (
             <div
               key={test.id || index}
-              className="p-4 hover:bg-slate-800/30 transition flex flex-col md:flex-row md:items-center justify-between gap-3"
+              className={`p-4 hover:bg-slate-800/30 transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-3 ${
+                test.modernPassed !== null
+                  ? test.modernPassed
+                    ? 'bg-emerald-950/10'
+                    : 'bg-rose-950/10'
+                  : test.originalPassed !== null
+                  ? 'bg-indigo-950/10'
+                  : ''
+              }`}
             >
               <div className="space-y-1 max-w-xl">
                 <div className="flex items-center gap-2">
@@ -121,11 +129,11 @@ export const TestResultsPanel: React.FC<TestResultsPanelProps> = ({
                       <Clock className="w-3.5 h-3.5 animate-spin" /> Pending
                     </span>
                   ) : test.originalPassed ? (
-                    <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                    <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium transition-all duration-300 animate-in fade-in slide-in-from-right-1">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Passed ({test.originalExecutionTimeMs}ms)
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-xs text-rose-400 font-medium">
+                    <span className="flex items-center gap-1 text-xs text-rose-400 font-medium transition-all duration-300 animate-in fade-in slide-in-from-right-1">
                       <XCircle className="w-3.5 h-3.5" /> Failed
                     </span>
                   )}
@@ -143,13 +151,13 @@ export const TestResultsPanel: React.FC<TestResultsPanelProps> = ({
                       <Clock className="w-3.5 h-3.5 animate-spin text-indigo-400" /> Running...
                     </span>
                   ) : test.modernPassed ? (
-                    <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Passed ({test.modernExecutionTimeMs}ms)
+                    <span className="flex items-center gap-1 text-xs text-emerald-400 font-medium bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40 transition-all duration-300 animate-in fade-in slide-in-from-right-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Passed ({test.modernExecutionTimeMs}ms)
                     </span>
                   ) : (
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-end transition-all duration-300 animate-in fade-in slide-in-from-right-1">
                       <span className="flex items-center gap-1 text-xs text-rose-400 font-medium bg-rose-950/40 px-2 py-0.5 rounded border border-rose-800/40">
-                        <XCircle className="w-3.5 h-3.5" /> Mismatch
+                        <XCircle className="w-3.5 h-3.5 text-rose-400" /> Mismatch
                       </span>
                       {test.modernError ? (
                         <span className="text-[10px] text-rose-300 font-mono mt-0.5 max-w-[160px] truncate" title={test.modernError}>
