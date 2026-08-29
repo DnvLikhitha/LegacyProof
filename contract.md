@@ -154,6 +154,7 @@ class ErrorResponse(BaseModel):
 
 | Date | Change | Changed by |
 |---|---|---|
-| _(fill in)_ | Initial contract | _(fill in)_ |
+| 2026-08-29 | Initial contract defined | Team |
+| 2026-08-29 | Implemented as-is in backend (`main.py`, `models.py`) and frontend (`types.ts`, `api.ts`) — no shape changes needed. LLM provider updated to GLM-5.2 / Gemini 3.7 Flash via LatentCode (implementation detail only, does not affect this contract's shape). | Team |
 
 *Keep this table updated any time the shape changes — it's the fastest way to catch drift during the 4-hour sync check-ins.*
