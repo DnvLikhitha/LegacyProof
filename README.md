@@ -4,6 +4,8 @@ AI-powered legacy code modernizer with equivalence verification. Paste legacy Ja
 
 Built for **BuildSprint by LatentForce.ai**.
 
+This hackathon build proves the core pattern — behavior-based equivalence verification — at the level of a single function. The same approach scales directly to verifying full-codebase migrations, which is the real problem engineering teams actually face when modernizing legacy systems.
+
 ---
 
 ## Project Docs
@@ -50,6 +52,7 @@ cp .env.example .env
 ```
 
 Edit `.env`:
+
 ```
 GROQ_API_KEY=your_actual_groq_key_here
 GEMINI_API_KEY=your_actual_gemini_key_here
@@ -159,4 +162,4 @@ LegacyProof-main/
 
 - This is a local-only demo build — not deployed. Run both servers locally as described above.
 - Scope is intentionally limited to single JavaScript/jQuery functions (see `PRD.md` for the full scope reasoning) — this is what keeps the whole stack free and the sandbox execution safe and simple.
-- `GLM-5.2` and `Gemini 3.7 Flash` (available via LatentCode) were used to *build* this project, not called by the app at runtime — the app's own live LLM calls go to Groq/Gemini directly, as documented in `TECH_STACK.md`.
+- `GLM-5.2` and `Gemini 3.7 Flash` (available via LatentCode) were used to _build_ this project, not called by the app at runtime — the app's own live LLM calls go to Groq/Gemini directly, as documented in `TECH_STACK.md`.

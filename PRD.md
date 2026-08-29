@@ -28,22 +28,26 @@ Most AI coding tools generate plausible-looking code and ask you to trust it. Th
 ## 4. Goals
 
 ### Hackathon goals (48 hours)
+
 - Ship a working, demoable end-to-end pipeline: paste legacy code → get modernized code → get proof it's equivalent.
 - Make the "proof" moment visually obvious and undeniable (a test suite going from red to green, live).
 - Keep 100% of the stack on free tools (see `TECH_STACK.md`).
 
 ### Longer-term vision (not required for hackathon, good for pitch)
+
+This build proves the core pattern — generating tests from real behavior, then verifying a rewrite against them — at the level of a single function. That pattern doesn't change at scale; only the surface area does. The same approach extends directly to:
+
 - Support more legacy languages/frameworks (Python 2, old PHP, AngularJS).
 - Batch-process entire repositories instead of single functions/files.
 - Integrate into CI so equivalence-proofing runs automatically on every migration PR.
 
 ## 5. Success Metrics (for the demo, not a real product)
 
-| Metric | Target |
-|---|---|
-| Time from pasting code to seeing pass/fail result | < 30 seconds |
-| Demo reliability (works without manual fixing) | 100% on the 2–3 rehearsed examples |
-| Judges can clearly see *why* it's trustworthy | Yes — visible test diff, not just a claim |
+| Metric                                            | Target                                    |
+| ------------------------------------------------- | ----------------------------------------- |
+| Time from pasting code to seeing pass/fail result | < 30 seconds                              |
+| Demo reliability (works without manual fixing)    | 100% on the 2–3 rehearsed examples        |
+| Judges can clearly see _why_ it's trustworthy     | Yes — visible test diff, not just a claim |
 
 ## 6. Core User Flow
 
@@ -61,6 +65,7 @@ Most AI coding tools generate plausible-looking code and ask you to trust it. Th
 ## 7. Features
 
 ### MVP — Must-Have for Demo
+
 - Text input for pasting legacy JS code.
 - LLM-powered code modernization (old JS/jQuery → modern TypeScript).
 - LLM-powered test case generation from the legacy code's behavior.
@@ -69,11 +74,13 @@ Most AI coding tools generate plausible-looking code and ask you to trust it. Th
 - Side-by-side code view (before / after).
 
 ### Stretch Goals (only if MVP is done early)
+
 - "Explain the diff" — a short AI-generated summary of what changed and why.
 - Support for a second legacy pattern (e.g., old `var`/callback-based code → `async/await`).
 - Downloadable report (modernized code + test results) as a shareable artifact.
 
 ### Out of Scope (explicitly, for 48 hours)
+
 - Full repository/multi-file migration.
 - Support for languages other than JavaScript.
 - User accounts, saved history, or persistence across sessions.
@@ -81,21 +88,21 @@ Most AI coding tools generate plausible-looking code and ask you to trust it. Th
 
 ## 8. Judging Criteria Alignment
 
-| Criteria | Weight | How this project scores |
-|---|---|---|
-| Idea & Innovation | 30% | Most AI coding demos generate code and ask for trust; this one proves correctness live. Also mirrors LatentForce's own "verification-first" migration philosophy. |
-| Execution & Technical Quality | 30% | Working end-to-end pipeline: generation → test synthesis → dual execution → verification. Demo outcome is unambiguous (pass/fail), not subjective. |
-| Usefulness & Impact | 25% | Directly addresses the real reason legacy code doesn't get modernized: lack of trust in AI rewrites. |
-| Presentation & Demo | 15% | Visual, concrete "watch the tests go green" moment — a strong 60–90 second demo beat. |
+| Criteria                      | Weight | How this project scores                                                                                                                                           |
+| ----------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Idea & Innovation             | 30%    | Most AI coding demos generate code and ask for trust; this one proves correctness live. Also mirrors LatentForce's own "verification-first" migration philosophy. |
+| Execution & Technical Quality | 30%    | Working end-to-end pipeline: generation → test synthesis → dual execution → verification. Demo outcome is unambiguous (pass/fail), not subjective.                |
+| Usefulness & Impact           | 25%    | Directly addresses the real reason legacy code doesn't get modernized: lack of trust in AI rewrites.                                                              |
+| Presentation & Demo           | 15%    | Visual, concrete "watch the tests go green" moment — a strong 60–90 second demo beat.                                                                             |
 
 ## 9. Risks & Mitigations
 
-| Risk | Mitigation |
-|---|---|
-| LLM generates a modernized version that's *actually* behaviorally different | This is a real, honest outcome — show it as evidence the tool works ("see, it caught a real difference"), don't hide it. Pre-test your rehearsed examples so you know their outcome. |
-| Live demo depends on an API call succeeding on stage | Have a pre-recorded fallback run/video as backup; keep prompts short to minimize latency; use a fast free LLM API (see tech stack). |
-| Sandboxed execution has edge-case bugs | Scope legacy input to pure functions (no DOM/network access) for the demo — keeps sandboxing simple and reliable. |
-| Team has mixed skill levels | Split cleanly: frontend/UI, backend/orchestration, and prompt engineering can be worked on in parallel from hour 1. |
+| Risk                                                                        | Mitigation                                                                                                                                                                           |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| LLM generates a modernized version that's _actually_ behaviorally different | This is a real, honest outcome — show it as evidence the tool works ("see, it caught a real difference"), don't hide it. Pre-test your rehearsed examples so you know their outcome. |
+| Live demo depends on an API call succeeding on stage                        | Have a pre-recorded fallback run/video as backup; keep prompts short to minimize latency; use a fast free LLM API (see tech stack).                                                  |
+| Sandboxed execution has edge-case bugs                                      | Scope legacy input to pure functions (no DOM/network access) for the demo — keeps sandboxing simple and reliable.                                                                    |
+| Team has mixed skill levels                                                 | Split cleanly: frontend/UI, backend/orchestration, and prompt engineering can be worked on in parallel from hour 1.                                                                  |
 
 ## 10. Demo Script (target: 90 seconds)
 

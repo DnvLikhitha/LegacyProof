@@ -83,17 +83,31 @@ function runCodeInWorker(code: string, functionName: string, args: unknown[], is
         try {
           // Provide mock jQuery or minimal DOM stubs if referenced
           const $ = function(selector) {
-            return {
+            const chain = {
+              length: 0,
               val: function() { return ""; },
               text: function() { return ""; },
               html: function() { return ""; },
               attr: function() { return ""; },
+              prop: function() { return false; },
               css: function() { return ""; },
-              addClass: function() { return this; },
-              removeClass: function() { return this; },
-              on: function() { return this; },
-              click: function() { return this; }
+              addClass: function() { return chain; },
+              removeClass: function() { return chain; },
+              toggleClass: function() { return chain; },
+              on: function() { return chain; },
+              click: function() { return chain; },
+              find: function() { return chain; },
+              filter: function() { return chain; },
+              each: function(cb) { return chain; },
+              is: function() { return false; },
+              parent: function() { return chain; },
+              children: function() { return chain; },
+              siblings: function() { return chain; },
+              hide: function() { return chain; },
+              show: function() { return chain; },
+              data: function() { return ""; }
             };
+            return chain;
           };
           $.ajax = function() { return Promise.resolve({}); };
           $.get = function() { return Promise.resolve({}); };
