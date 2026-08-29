@@ -37,7 +37,10 @@ export function cleanCodeForWorker(code: string, isTypeScript: boolean = false):
   cleaned = cleaned.replace(/export\s+/g, '');
 
   if (isTypeScript) {
-    // 2. Strip parameter type annotations only for TypeScript code
+    // 2. Strip TypeScript interface and type declarations (e.g. interface CartItem { ... } or type Foo = ...)
+    cleaned = cleaned.replace(/(?:interface|type)\s+[A-Za-z0-9_$]+(?:\s*<[^>]+>)?(?:\s*=\s*[^;]+;|\s*\{[^}]*\})/g, '');
+
+    // 3. Strip parameter type annotations only for TypeScript code
     // e.g. (amount: unknown, currency?: string) -> (amount, currency)
     // or (amount: unknown, currency: string = '$') -> (amount, currency = '$')
     cleaned = cleaned.replace(/(\(\s*)([^)]*)(\s*\))/g, (_match, p1, params, p3) => {
@@ -53,17 +56,17 @@ export function cleanCodeForWorker(code: string, isTypeScript: boolean = false):
       return p1 + strippedParams + p3;
     });
 
-    // 3. Strip function return type annotations
+    // 4. Strip function return type annotations
     cleaned = cleaned.replace(/(\)\s*):\s*[\w<>[\]|\s&{}()]+(?=\s*\{|\s*=>)/g, '$1');
 
-    // 4. Strip 'as' type assertions
+    // 5. Strip 'as' type assertions
     cleaned = cleaned.replace(/\s+as\s+[\w<>[\]|\s&{}()]+/g, '');
 
-    // 5. Clean up any accidental replacement space insertions e.g. '$1, ' -> '$1,'
+    // 6. Clean up any accidental replacement space insertions e.g. '$1, ' -> '$1,'
     cleaned = cleaned.replace(/\$1,\s+/g, '$1,');
   }
 
-  // 5. Convert arrow variable declarations back to standard function declarations if needed
+  // 7. Convert arrow variable declarations back to standard function declarations if needed
   cleaned = cleaned.replace(/(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*(?:function\b|\([^)]*\)\s*=>)/g, 'function $1');
 
   return cleaned;

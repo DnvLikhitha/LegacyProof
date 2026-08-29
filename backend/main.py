@@ -1,3 +1,4 @@
+import logging
 import os
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -5,6 +6,8 @@ from fastapi.responses import JSONResponse
 
 from models import ErrorResponse, ProcessRequest, ProcessResponse
 from llm_service import process_legacy_code
+
+logger = logging.getLogger("main")
 
 app = FastAPI(
     title="LegacyProof Backend API",
@@ -61,6 +64,8 @@ async def process_code(request: ProcessRequest):
             content={"error": "configuration_error", "detail": str(ve)},
         )
     except Exception as e:
+        import traceback
+        logger.error(f"Error processing legacy code: {e}\n{traceback.format_exc()}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"error": "llm_processing_failed", "detail": str(e)},
