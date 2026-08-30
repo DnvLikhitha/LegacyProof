@@ -1,19 +1,91 @@
-# LegacyProof
+<h1 align="center">LegacyProof</h1>
 
-AI-powered legacy code modernizer with equivalence verification. Paste legacy JavaScript/jQuery code, get a modernized TypeScript rewrite — and proof it behaves identically, via an auto-generated test suite run against both versions live.
+<p align="center">
+  <img src="https://img.shields.io/badge/Built%20with-LatentCode-6366f1" alt="Built with LatentCode">
+  <img src="https://img.shields.io/badge/BuildSprint-2026-10b981" alt="BuildSprint 2026">
+</p>
 
-Built for **BuildSprint by LatentForce.ai**.
+<p align="center">
+  <strong>AI-powered legacy code modernizer that doesn't just rewrite your code — it proves the rewrite is safe.</strong>
+</p>
 
-This hackathon build proves the core pattern — behavior-based equivalence verification — at the level of a single function. The same approach scales directly to verifying full-codebase migrations, which is the real problem engineering teams actually face when modernizing legacy systems.
+<p align="center">
+  Paste legacy JavaScript/jQuery code in, get a modernized TypeScript rewrite out — along with a test suite generated directly from the original code's real behavior, run live against both versions. Not "probably fine." Proven.
+</p>
+
+<p align="center">Built for <strong>BuildSprint by LatentForce.ai</strong>.</p>
+
+> This hackathon build proves the core pattern — behavior-based equivalence verification — at the level of a single function. The same approach scales directly to verifying full-codebase migrations, which is the real problem engineering teams actually face when modernizing legacy systems.
+
+---
+
+## How it works
+
+```mermaid
+flowchart TD
+    subgraph Browser["🖥️ Browser — Frontend"]
+        UI["React UI<br/>Monaco Editor"]
+        W1["Web Worker<br/>runs ORIGINAL code"]
+        W2["Web Worker<br/>runs MODERNIZED code"]
+        R["Pass / Fail Results"]
+        UI --> W1
+        UI --> W2
+        W1 --> R
+        W2 --> R
+    end
+
+    subgraph Server["⚙️ FastAPI Backend"]
+        API["POST /process"]
+        Health["GET /health"]
+    end
+
+    subgraph LLMs["🤖 Free LLM APIs"]
+        Groq["Groq<br/>gpt-oss-120b → gpt-oss-20b → qwen3.6-27b"]
+        Gemini["Gemini<br/>flash-latest → 3.5-flash → flash-lite"]
+    end
+
+    UI -- "legacy_code" --> API
+    API -- "primary" --> Groq
+    API -. "fallback" .-> Gemini
+    API -- "modernized_code + tests[] + warnings[]" --> UI
+```
+
+No database, no deployment required for the demo — everything runs locally, and equivalence checking happens entirely client-side in sandboxed Web Workers, not on the backend. See [`TECH_STACK.md`](./TECH_STACK.md) for the full breakdown of why (and how it stays 100% free).
+
+### Request lifecycle
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend (React)
+    participant B as Backend (FastAPI)
+    participant L as LLM (Groq / Gemini)
+    participant W as Web Worker Sandbox
+
+    U->>F: Paste legacy code, click Modernize
+    F->>B: POST /process { legacy_code }
+    B->>L: Analyze behavior, generate tests, rewrite code
+    L-->>B: modernized_code, tests[], warnings[]
+    B-->>F: ProcessResponse (JSON)
+    F->>W: Run generated tests against ORIGINAL code
+    W-->>F: baseline pass/fail
+    F->>W: Run same tests against MODERNIZED code
+    W-->>F: equivalence pass/fail
+    F-->>U: Live side-by-side result
+```
+
+The key design point: **verification happens independently of the AI.** The LLM only generates code and tests — whether the rewrite actually passes those tests is decided by real, deterministic execution in the browser, not by asking the model if it thinks the rewrite is correct.
 
 ---
 
 ## Project Docs
 
-- [`PRD.md`](./PRD.md) — what this is, who it's for, feature scope
-- [`TECH_STACK.md`](./TECH_STACK.md) — full stack breakdown, all free tools
-- [`contract.md`](./contract.md) — the exact frontend/backend API contract
-- [`.latentcode/skills/legacy-equivalence-test-generator/`](./.latentcode/skills/legacy-equivalence-test-generator/SKILL.md) — the published SkillPatch skill powering the core test-generation logic
+| Doc | What's in it |
+|---|---|
+| [`PRD.md`](./PRD.md) | What this is, who it's for, feature scope, judging-criteria alignment |
+| [`TECH_STACK.md`](./TECH_STACK.md) | Full stack breakdown — every tool used, and why it's free |
+| [`contract.md`](./contract.md) | The exact frontend/backend API contract, with a live change log |
+| [`.latentcode/skills/legacy-equivalence-test-generator/SKILL.md`](./.latentcode/skills/legacy-equivalence-test-generator/SKILL.md) | The published SkillPatch skill powering the core test-generation logic |
 
 ---
 
@@ -21,9 +93,9 @@ This hackathon build proves the core pattern — behavior-based equivalence veri
 
 - **Node.js** 18+ and npm
 - **Python** 3.10+
-- Free API key(s) — you need at least one:
-  - Groq (primary): [console.groq.com](https://console.groq.com) — no card required
-  - Gemini (fallback): [Google AI Studio](https://aistudio.google.com) — no card required
+- At least one free API key:
+  - Groq (primary) — [console.groq.com](https://console.groq.com), no card required
+  - Gemini (fallback) — [Google AI Studio](https://aistudio.google.com), no card required
 
 ---
 
@@ -32,26 +104,21 @@ This hackathon build proves the core pattern — behavior-based equivalence veri
 ### 1. Clone and enter the project
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/dnvLikhitha/LegacyProof
 cd LegacyProof-main
 ```
 
-### 2. Backend setup
+### 2. Backend
 
 ```bash
 cd backend
 python3 -m venv venv
-source venv/bin/activate        # On Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-```
-
-Create your local env file from the example and fill in at least one key:
-
-```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` with at least one real key:
 
 ```
 GROQ_API_KEY=your_actual_groq_key_here
@@ -60,60 +127,53 @@ PORT=8000
 HOST=0.0.0.0
 ```
 
-Run the backend:
+Run it:
 
 ```bash
 python run.py
 ```
 
-The API is now live at `http://localhost:8000`. Confirm it's up:
+Confirm it's alive:
 
 ```bash
 curl http://localhost:8000/health
 # {"status":"ok"}
 ```
 
-### 3. Frontend setup
+### 3. Frontend
 
-Open a **second terminal** (keep the backend running in the first one):
+New terminal, backend still running:
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env
-```
-
-The default `.env` already points at `http://localhost:8000` — no changes needed for local dev.
-
-Run the frontend:
-
-```bash
+cp .env.example .env      # already points at localhost:8000, no edits needed
 npm run dev
 ```
 
-Open the URL Vite prints (typically `http://localhost:5173`).
+Open the URL Vite prints — typically `http://localhost:5173`.
 
 ---
 
 ## Verifying everything works
 
-1. In the app, load one of the built-in sample snippets (currency formatter, cart summary, or slug sanitizer).
+1. Load one of the built-in sample snippets (currency formatter, cart summary, or slug sanitizer).
 2. Click **Modernize**.
-3. Watch: modernized TypeScript code appears, tests generate, and results run against both the original and modernized code — pass/fail shown live.
+3. Watch: modernized TypeScript appears, tests generate, then run live against both the original and modernized code — pass/fail shown on screen.
 
-If step 3 fails immediately with an error about API keys, double check `backend/.env` has a real (not placeholder) key and that you restarted `python run.py` after editing it.
+If step 3 errors out immediately, check that `backend/.env` has a real key (not the placeholder) and that you restarted `python run.py` after editing it.
 
 ---
 
 ## Running the tests
 
-**Backend** (from `backend/`, with venv activated):
+**Backend** (from `backend/`, venv activated):
 
 ```bash
 pytest test_main.py -v
 ```
 
-Note: `test_health_check`, `test_process_empty_code`, and `test_process_with_mocked_llm` will always pass — they don't need API keys. `test_process_simple_function`, `test_process_string_formatter`, and `test_process_jquery_dom_snippet` call the real LLM API and require valid keys in `.env` to pass; without keys they'll fail with a clear error, not a crash.
+`test_health_check`, `test_process_empty_code`, and `test_process_with_mocked_llm` always pass — no API keys needed. `test_process_simple_function`, `test_process_string_formatter`, and `test_process_jquery_dom_snippet` call the real LLM and need valid keys in `.env`; without them they fail cleanly with a clear error, not a crash.
 
 **Frontend** (from `frontend/`):
 
@@ -135,17 +195,17 @@ LegacyProof-main/
 │       └── legacy-equivalence-test-generator/
 │           └── SKILL.md
 ├── backend/
-│   ├── main.py           # FastAPI app, /health and /process endpoints
+│   ├── main.py           # FastAPI app — /health and /process
 │   ├── models.py         # Pydantic request/response models
 │   ├── llm_service.py    # LLM prompt + Groq/Gemini calls
 │   ├── run.py            # Entry point (uvicorn)
-│   ├── test_main.py      # Backend tests
+│   ├── test_main.py
 │   ├── requirements.txt
 │   └── .env.example
 └── frontend/
     ├── src/
     │   ├── App.tsx
-    │   ├── api.ts         # Calls the backend /process endpoint
+    │   ├── api.ts         # Calls backend /process
     │   ├── runner.ts      # Web Worker sandbox + equivalence checking
     │   ├── runner.test.ts
     │   ├── samples.ts      # Built-in demo snippets
@@ -160,6 +220,10 @@ LegacyProof-main/
 
 ## Notes
 
-- This is a local-only demo build — not deployed. Run both servers locally as described above.
-- Scope is intentionally limited to single JavaScript/jQuery functions (see `PRD.md` for the full scope reasoning) — this is what keeps the whole stack free and the sandbox execution safe and simple.
-- `GLM-5.2` and `Gemini 3.7 Flash` (available via LatentCode) were used to _build_ this project, not called by the app at runtime — the app's own live LLM calls go to Groq/Gemini directly, as documented in `TECH_STACK.md`.
+- Local-only demo build — not deployed. Run both servers locally as described above.
+- Scope is intentionally limited to single JavaScript/jQuery functions (see `PRD.md` for the full reasoning) — this is what keeps the stack free and the sandbox execution safe and simple.
+- `GLM-5.2` and `Gemini 3.7 Flash` (available via LatentCode) were used to *build* this project, not called by the app at runtime — the app's own live LLM calls go to Groq/Gemini directly, as documented in `TECH_STACK.md`.
+
+---
+
+<p align="center">Built with 🧡 using LatentCode · BuildSprint 2026</p>
